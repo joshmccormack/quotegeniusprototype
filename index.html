@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuoteGenius - AI-Powered Instant Proposals</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .screen {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-bottom: 20px;
+            min-height: 500px;
+            display: none;
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .chat-container {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .message.ai {
+            justify-content: flex-start;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .ai .message-bubble {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .user .message-bubble {
+            background: #667eea;
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+        
+        .progress-bar {
+            background: #e0e0e0;
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        .customer-site {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .customer-site h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .quote-form {
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .quote-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid transparent;
+        }
+        
+        .quote-card.high-confidence {
+            border-left-color: #28a745;
+        }
+        
+        .quote-card.low-confidence {
+            border-left-color: #ffc107;
+        }
+        
+        .confidence-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .confidence-high {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .confidence-low {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-sent {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-pending {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .quote-result {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .quote-amount {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .navigation {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .nav-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Screen 1: Introduction -->
+        <div class="screen active" id="intro">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">AI-Powered Instant Proposals for Small Businesses</div>
+            </div>
+            
+            <div style="text-align: center; margin: 40px 0;">
+                <h2 style="color: #333; margin-bottom: 20px;">Turn Website Visitors Into Customers Instantly</h2>
+                <p style="color: #666; font-size: 18px; max-width: 600px; margin: 0 auto 40px;">
+                    Help your service business send professional quotes automatically, even when you're busy with jobs.
+                </p>
+                
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">3x</div>
+                        <div class="metric-label">More Quotes Sent</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">Instant</div>
+                        <div class="metric-label">Response Time</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">24/7</div>
+                        <div class="metric-label">Always Available</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn" onclick="showScreen('setup')">See How It Works</button>
+            </div>
+        </div>
+
+        <!-- Screen 2: Business Setup -->
+        <div class="screen" id="setup">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">Step 1: Tell Us About Your Business</div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 33%;"></div>
+            </div>
+            
+            <div class="chat-container" id="setupChat">
+                <div class="message ai">
+                    <div class="message-bubble">Hi! I'm here to help set up instant quotes for your business. What type of service do you provide?</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <input type="text" id="businessType" placeholder="Type your business type (e.g., pool cleaning, lawn care, house cleaning)" style="margin-bottom: 10px;">
+                <button class="btn" onclick="handleBusinessSetup()">Continue</button>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn-secondary btn" onclick="showScreen('intro')">Back</button>
+            </div>
+        </div>
+
+        <!-- Screen 3: Customer Experience -->
+        <div class="screen" id="customer">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">Step 2: Your Customer's Experience</div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 66%;"></div>
+            </div>
+            
+            <div class="nav-info">
+                This is what your customers see on your website
+            </div>
+            
+            <div class="customer-site">
+                <h3>🏊 Sunshine Pool Cleaning</h3>
+                <p>Professional pool maintenance services in your area</p>
+                
+                <div class="quote-form">
+                    <h4 style="color: #667eea; margin-bottom: 20px;">Get Your Instant Quote</h4>
+                    
+                    <div class="form-group">
+                        <label>Pool Size</label>
+                        <select id="poolSize">
+                            <option value="">Select pool size</option>
+                            <option value="small">Small (up to 15' x 30')</option>
+                            <option value="medium">Medium (15' x 30' to 20' x 40')</option>
+                            <option value="large">Large (over 20' x 40')</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cleaning Frequency</label>
+                        <select id="frequency">
+                            <option value="">How often?</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="biweekly">Bi-weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pool Shape</label>
+                        <select id="poolShape">
+                            <option value="regular">Regular (Rectangle/Oval)</option>
+                            <option value="irregular">Irregular (Custom/Kidney/L-shaped)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Contact Information</label>
+                        <input type="email" placeholder="Your email" style="margin-bottom: 10px;">
+                        <input type="tel" placeholder="Your phone number">
+                    </div>
+                    
+                    <button class="btn" onclick="generateQuote()" style="width: 100%;">Get My Instant Quote</button>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn-secondary btn" onclick="showScreen('setup')">Back</button>
+            </div>
+        </div>
+
+        <!-- Screen 4: Quote Generation -->
+        <div class="screen" id="generating">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">Generating Your Quote...</div>
+            </div>
+            
+            <div class="loading">
+                <div class="spinner"></div>
+                <h3>Our AI is analyzing your requirements</h3>
+                <p>Creating a personalized quote based on your pool details...</p>
+            </div>
+        </div>
+
+        <!-- Screen 5: Quote Result -->
+        <div class="screen" id="quote-result">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">Your Professional Quote</div>
+            </div>
+            
+            <div class="quote-result">
+                <h2>Your Pool Cleaning Quote</h2>
+                <div class="quote-amount" id="quoteAmount">$120/month</div>
+                <p>Weekly cleaning service for medium pool</p>
+                <p style="margin-top: 20px; font-size: 14px; opacity: 0.9;">
+                    Quote valid for 30 days • We'll contact you within 24 hours
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <h3>What happens next?</h3>
+                <p style="color: #666; margin: 15px 0;">
+                    This quote was automatically generated and sent to Sunshine Pool Cleaning. 
+                    Let's see what the business owner sees in their dashboard.
+                </p>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn" onclick="showScreen('dashboard')">View Business Dashboard</button>
+            </div>
+        </div>
+
+        <!-- Screen 6: Business Dashboard -->
+        <div class="screen" id="dashboard">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">Step 3: Your Business Dashboard</div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 100%;"></div>
+            </div>
+            
+            <div class="nav-info">
+                This is what you see as the business owner
+            </div>
+            
+            <h3 style="margin-bottom: 20px;">Recent Quote Requests</h3>
+            
+            <div class="dashboard-grid">
+                <div class="quote-card high-confidence">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>Medium Pool - Weekly</strong>
+                        <span class="confidence-badge confidence-high">95% Confidence</span>
+                    </div>
+                    <p style="color: #666; margin-bottom: 10px;">Regular rectangular pool, standard service</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>$120/month</span>
+                        <span class="status-badge status-sent">✓ Auto-Sent</span>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                        📧 john@email.com • 📞 (555) 123-4567
+                    </p>
+                </div>
+                
+                <div class="quote-card low-confidence">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>Large Irregular Pool</strong>
+                        <span class="confidence-badge confidence-low">72% Confidence</span>
+                    </div>
+                    <p style="color: #666; margin-bottom: 10px;">Custom kidney-shaped pool, may need site visit</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>$180/month</span>
+                        <span class="status-badge status-pending">⏳ Needs Review</span>
+                    </div>
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                        📧 sarah@email.com • 📞 (555) 987-6543
+                    </p>
+                    <div style="margin-top: 10px;">
+                        <button class="btn" style="font-size: 12px; padding: 6px 12px;" onclick="approveQuote()">Approve & Send</button>
+                        <button class="btn-secondary btn" style="font-size: 12px; padding: 6px 12px;">Edit Quote</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metrics" style="margin-top: 30px;">
+                <div class="metric-card">
+                    <div class="metric-value">12</div>
+                    <div class="metric-label">Quotes This Week</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">85%</div>
+                    <div class="metric-label">Auto-Sent Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">45%</div>
+                    <div class="metric-label">Quote-to-Job Rate</div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn" onclick="showScreen('results')">See Results</button>
+                <button class="btn-secondary btn" onclick="showScreen('customer')">Back</button>
+            </div>
+        </div>
+
+        <!-- Screen 7: Results -->
+        <div class="screen" id="results">
+            <div class="header">
+                <div class="logo">QuoteGenius</div>
+                <div class="tagline">See the Difference QuoteGenius Makes</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 40px 0;">
+                <div>
+                    <h3 style="color: #e74c3c; margin-bottom: 20px;">❌ Before QuoteGenius</h3>
+                    <ul style="color: #666; line-height: 2;">
+                        <li>2-3 quotes sent per day</li>
+                        <li>24-48 hour response time</li>
+                        <li>Customers leave without quotes</li>
+                        <li>Manual quote creation takes time</li>
+                        <li>Miss opportunities while on jobs</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color: #27ae60; margin-bottom: 20px;">✅ With QuoteGenius</h3>
+                    <ul style="color: #666; line-height: 2;">
+                        <li>8-12 quotes sent per day</li>
+                        <li>Instant response time</li>
+                        <li>Never miss a potential customer</li>
+                        <li>Professional quotes automatically</li>
+                        <li>Work 24/7, even while you sleep</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="text-align: center; background: #f8f9fa; padding: 30px; border-radius: 12px; margin: 30px 0;">
+                <h2 style="color: #333; margin-bottom: 10px;">Ready to 3x Your Quote Volume?</h2>
+                <p style="color: #666; margin-bottom: 20px;">Join hundreds of service businesses already using QuoteGenius</p>
+                <button class="btn" style="font-size: 18px; padding: 16px 32px;">Start Free Trial</button>
+            </div>
+            
+            <div class="navigation">
+                <button class="btn-secondary btn" onclick="showScreen('intro')">Start Over</button>
+                <button class="btn-secondary btn" onclick="showScreen('dashboard')">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+        
+        function handleBusinessSetup() {
+            const businessType = document.getElementById('businessType').value;
+            const chatContainer = document.getElementById('setupChat');
+            
+            if (businessType.trim()) {
+                // Add user message
+                chatContainer.innerHTML += `
+                    <div class="message user">
+                        <div class="message-bubble">${businessType}</div>
+                    </div>
+                `;
+                
+                // Add AI response
+                setTimeout(() => {
+                    chatContainer.innerHTML += `
+                        <div class="message ai">
+                            <div class="message-bubble">Perfect! For ${businessType}, how do you typically price your services? Do you charge by square footage, hourly rate, or job complexity?</div>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        chatContainer.innerHTML += `
+                            <div class="message ai">
+                                <div class="message-bubble">Great! I've created a smart quote form that understands your pricing model. Let's see how your customers will experience it.</div>
+                            </div>
+                        `;
+                        
+                        setTimeout(() => {
+                            showScreen('customer');
+                        }, 2000);
+                    }, 2000);
+                    
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 1000);
+                
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+        
+        function generateQuote() {
+            const poolSize = document.getElementById('poolSize').value;
+            const frequency = document.getElementById('frequency').value;
+            const poolShape = document.getElementById('poolShape').value;
+            
+            if (poolSize && frequency) {
+                showScreen('generating');
+                
+                setTimeout(() => {
+                    // Calculate quote based on selections
+                    let basePrice = poolSize === 'small' ? 80 : poolSize === 'medium' ? 120 : 180;
+                    let frequencyMultiplier = frequency === 'weekly' ? 1 : frequency === 'biweekly' ? 0.6 : 0.4;
+                    let finalPrice = Math.round(basePrice * frequencyMultiplier);
+                    
+                    // Adjust for irregular shapes
+                    if (poolShape === 'irregular') {
+                        finalPrice += 20;
+                    }
+                    
+                    document.getElementById('quoteAmount').textContent = `$${finalPrice}/month`;
+                    showScreen('quote-result');
+                }, 3000);
+            } else {
+                alert('Please fill in all required fields');
+            }
+        }
+        
+        function approveQuote() {
+            alert('Quote approved and sent to customer!');
+            // Update the status
+            event.target.parentNode.parentNode.querySelector('.status-pending').textContent = '✓ Sent';
+            event.target.parentNode.parentNode.querySelector('.status-pending').className = 'status-badge status-sent';
+            event.target.parentNode.style.display = 'none';
+        }
+        
+        // Auto-advance intro after a delay
+        setTimeout(() => {
+            if (document.getElementById('intro').classList.contains('active')) {
+                // Could auto-advance here if desired
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
